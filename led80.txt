@@ -1,0 +1,418 @@
+# led 80
+# memory map
+# 0x00 - 0x0F state variables 0 - 15
+# 0x10 - 0x1F temporary transposed state
+# 0x20 - 0x33 key k0 - k19
+# 0x34 step  (initialized to 0)
+# 0x35 rnd   (initialized to 0)
+# 0x36 kptr  (initialized to k0 = 0x20)
+# 0x37 - 0x3F reserved for stack
+# base addresses of state
+.equ x0 0x00
+.equ x1 0x01
+.equ x2 0x02
+.equ x3 0x03
+.equ x4 0x04
+.equ x5 0x05
+.equ x6 0x06
+.equ x7 0x07
+.equ x8 0x08
+.equ x9 0x09
+.equ x10 0x0A
+.equ x11 0x0B
+.equ x12 0x0C
+.equ x13 0x0D
+.equ x14 0x0E
+.equ x15 0x0F
+# temporary transposed state
+.equ tx0 0x10
+.equ tx1 0x14
+.equ tx2 0x18
+.equ tx3 0x1C
+.equ tx4 0x1D
+.equ tx5 0x11
+.equ tx6 0x15
+.equ tx7 0x19
+.equ tx8 0x1A
+.equ tx9 0x1E
+.equ tx10 0x12
+.equ tx11 0x16
+.equ tx12 0x17
+.equ tx13 0x1B
+.equ tx14 0x1F
+.equ tx15 0x13
+.equ k0 0x20
+.equ k19 0x33
+.equ step 0x34
+.equ rnd 0x35
+.equ kptr 0x36
+# start
+.lbl lpst
+jsr stplp
+mvi step, r0
+lds r0, r1
+mvi 0x0B, r2
+sub r1, r2
+bzi lpnd
+inc r1
+sts r1, r0
+jmp lpst
+.lbl lpnd
+jsr adky
+.end
+nop
+# step
+.lbl stplp
+mvi 0x00, r0
+mvi rnd, r1
+sts r0, r1
+jsr adky
+.lbl stplp1
+jsr rndlp
+mvi rnd, r0
+lds r0, r1
+mvi 0x03, r2
+sub r1, r2
+bzi stpnd
+inc r1
+sts r1, r0
+jmp stplp1
+.lbl stpnd
+ret  
+# round
+.lbl rndlp
+# add round constants
+# value must be 4 for 64 bit key, 8 for 128 bit key
+# value must be 5 for 80 bit key
+mvi 0x05, r0
+mvi x0, r1
+lds r1, r2
+xor r0, r2
+sts r2, r1
+# value must be 5 for 64 bit key, 9 for 128 bit key
+# value must be 4 for 80 bit key
+mvi 0x04, r0
+mvi x4, r1
+lds r1, r2
+xor r0, r2
+sts r2, r1
+# value must be 2 for 64, 80, 128 bit keys
+mvi 0x02, r0
+mvi x8, r1
+lds r1, r2
+xor r0, r2
+sts r2, r1
+# value must be 3 for 64, 80, 128 bit keys
+mvi 0x03, r0
+mvi x12, r1
+lds r1, r2
+xor r0, r2
+sts r2, r1
+# compute table index (base + step*8 + round*2)
+mvi step, r0
+lds r0, r0
+mvi 0x03, r1
+sll r1, r0
+mvi rnd, r2
+lds r2, r2
+mvi 0x01, r1
+sll r1, r2
+add r2, r0
+mvi 0x10, r1
+add r1, r0
+mov r0, r1
+# upper round constant in r0
+trf t0, r0
+inc r1
+# lower round constant in r1
+trf t0, r1
+mvi x1, r2
+lds r2, r3
+xor r0, r3
+sts r3, r2
+mvi x5, r2
+lds r2, r3
+xor r1, r3
+sts r3, r2
+mvi x9, r2
+lds r2, r3
+xor r0, r3
+sts r3, r2
+mvi x13, r2
+lds r2, r3
+xor r1, r3
+sts r3, r2
+# SubCells
+mvi x15, r0
+.lbl sbst
+lds r0, r1
+trf t0, r1
+sts r1, r0
+dec r0
+bni sbnd
+jmp sbst
+.lbl sbnd
+# move base state to transposed state
+mvi x0, r0
+lds r0, r1
+mvi tx0, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx1, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx2, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx3, r2
+sts r1, r2
+inc r0
+lds r0, r1
+inc r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx5, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx6, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx7, r2
+sts r1, r2
+inc r0
+lds r0, r1
+inc r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx9, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx10, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx11, r2
+sts r1, r2
+inc r0
+lds r0, r1
+inc r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx13, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx14, r2
+sts r1, r2
+inc r0
+lds r0, r1
+mvi tx15, r2
+sts r1, r2
+# start matrix multiplication
+mvi tx0, r0
+jsr mulrow0
+mvi x0, r0
+sts r3, r0
+mvi tx1, r0
+jsr mulrow0
+mvi x1, r0
+sts r3, r0
+mvi tx2, r0
+jsr mulrow0
+mvi x2, r0
+sts r3, r0
+mvi tx3, r0
+jsr mulrow0
+mvi x3, r0
+sts r3, r0
+mvi tx0, r0
+jsr mulrow1
+mvi x4, r0
+sts r3, r0
+mvi tx1, r0
+jsr mulrow1
+mvi x5, r0
+sts r3, r0
+mvi tx2, r0
+jsr mulrow1
+mvi x6, r0
+sts r3, r0
+mvi tx3, r0
+nop
+nop
+jsr mulrow1
+mvi x7, r0
+sts r3, r0
+mvi tx0, r0
+jsr mulrow2
+mvi x8, r0
+sts r3, r0
+mvi tx1, r0
+jsr mulrow2
+mvi x9, r0
+sts r3, r0
+mvi tx2, r0
+jsr mulrow2
+mvi x10, r0
+sts r3, r0
+mvi tx3, r0
+jsr mulrow2
+mvi x11, r0
+sts r3, r0
+mvi tx0, r0
+jsr mulrow3
+mvi x12, r0
+sts r3, r0
+mvi tx1, r0
+jsr mulrow3
+mvi x13, r0
+sts r3, r0
+mvi tx2, r0
+jsr mulrow3
+mvi x14, r0
+sts r3, r0
+mvi tx3, r0
+jsr mulrow3
+mvi x15, r0
+sts r3, r0
+ret
+# column multiplication by row M0
+# starting address in r0
+# result returned in r3
+.lbl mulrow0
+mvi 0x00, r3
+lds r0, r1
+mvi 0x04, r2
+gf4 r2, r1
+mov r1, r3
+inc r0
+lds r0, r1
+mvi 0x01, r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+inc r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+gf4 r2, r1
+xor r1, r3
+ret
+# column multiplication by row M1
+# starting address in r0
+# result returned in r3
+.lbl mulrow1
+mvi 0x00, r3
+lds r0, r1
+mvi 0x08, r2
+gf4 r2, r1
+mov r1, r3
+inc r0
+lds r0, r1
+mvi 0x06, r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+dec r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+inc r2
+gf4 r2, r1
+xor r1, r3
+ret
+# column multiplication by row M2
+# starting address in r0
+# result returned in r3
+.lbl mulrow2
+mvi 0x00, r3
+lds r0, r1
+mvi 0x0B, r2
+gf4 r2, r1
+mov r1, r3
+inc r0
+lds r0, r1
+mvi 0x0E, r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+mvi 0x0A, r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+dec r2
+gf4 r2, r1
+xor r1, r3
+ret
+# column multiplication by row M3
+# starting address in r0
+# result returned in r3
+.lbl mulrow3
+mvi 0x00, r3
+lds r0, r1
+mvi 0x02, r2
+gf4 r2, r1
+mov r1, r3
+inc r0
+lds r0, r1
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+mvi 0x0F, r2
+gf4 r2, r1
+xor r1, r3
+inc r0
+lds r0, r1
+mvi 0x0B, r2
+gf4 r2, r1
+xor r1, r3
+ret
+# add key (once per step and at the end)
+.lbl adky
+# determine if K1 (even step) or K2 (odd step)
+mvi kptr, r2
+lds r2, r2
+mvi x0, r0
+.lbl adky1
+lds r0, r1
+lds r2, r3
+xor r1, r3
+sts r3, r0
+# check if need to reset kptr to k0
+mvi k19, r3
+sub r2, r3
+# if r2 == branch to reset
+bzi kprt
+# if no reset, increment kptr
+inc r2
+jmp kpct
+.lbl kprt
+mvi k0, r2
+.lbl kpct
+# check to see if 16 bytes completed
+mvi 0x0F, r3
+sub r0, r3
+bzi adkynd
+inc r0
+jmp adky1
+.lbl adkynd
+# store new kptr for next time
+mvi kptr, r1
+sts r2, r1
+ret
